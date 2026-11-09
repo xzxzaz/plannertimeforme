@@ -3,81 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Обратный тайм-менеджер</title>
+    <title>Тайм-Менеджер</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Строгий монохромный стиль */
         * { box-sizing: border-box; }
         body { 
             background-color: #000000; 
             color: #FFFFFF; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0; 
-            padding: 16px; 
+            margin: 0; padding: 16px; padding-bottom: 80px; 
         }
         .card { 
-            background-color: #111111; 
-            border: 1px solid #333333; 
-            border-radius: 8px; 
-            padding: 16px; 
-            margin-bottom: 16px; 
+            background-color: #111111; border: 1px solid #333333; 
+            border-radius: 8px; padding: 16px; margin-bottom: 16px; 
         }
+        
+        /* Стили календаря */
+        .date-strip {
+            display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px;
+            scrollbar-width: none; /* Firefox */
+        }
+        .date-strip::-webkit-scrollbar { display: none; }
+        .date-btn {
+            background: #111; border: 1px solid #333; color: #888;
+            padding: 10px 14px; border-radius: 8px; font-weight: 600;
+            white-space: nowrap; cursor: pointer; transition: 0.2s;
+        }
+        .date-btn.active {
+            background: #FFFFFF; color: #000000; border-color: #FFFFFF;
+        }
+
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 600;}
         .clock { font-family: monospace; font-size: 1.2em; color: #aaaaaa; }
         
-        .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaaaaa;}
-        
-        input { 
-            background: #000000; 
-            color: #FFFFFF; 
-            border: 1px solid #333333; 
-            padding: 10px; 
-            border-radius: 6px; 
-            outline: none; 
-            width: 100%;
-            font-size: 16px;
+        input[type="time"], input[type="text"], input[type="number"] { 
+            background: #000; color: #FFF; border: 1px solid #333; 
+            padding: 10px; border-radius: 6px; outline: none; font-size: 16px; width: 100%;
         }
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         
-        .btn-add { 
-            background: #FFFFFF; 
-            color: #000000; 
-            border: none; 
-            padding: 12px; 
-            border-radius: 6px; 
-            width: 100%; 
-            font-weight: 600; 
-            cursor: pointer; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
+        /* Списки и кнопки */
+        .btn-add { background: #FFFFFF; color: #000000; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-add:active { background: #cccccc; }
-
-        .task-list { margin-top: 15px; }
-        .task-row { 
-            display: flex; 
-            gap: 8px; 
-            margin-bottom: 10px; 
-            align-items: center;
-        }
+        
+        .task-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
         .task-row input[type="text"] { flex: 1; }
         .task-row input[type="number"] { width: 70px; text-align: center; }
-        .btn-del { 
-            background: transparent; 
-            border: 1px solid #333; 
-            color: #fff; 
-            width: 40px; 
-            height: 40px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-        }
+        .btn-del { background: transparent; border: 1px solid #333; color: #fff; width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; }
         
+        /* Шаблоны */
+        .presets-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .preset-chip {
+            background: #222; border: 1px solid #444; border-radius: 6px; 
+            padding: 6px 10px; font-size: 0.85em; display: flex; align-items: center; gap: 6px; cursor: pointer;
+        }
+        .preset-chip .del-preset { color: #ff4444; font-weight: bold; }
+        
+        /* Тумблер настроек */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #FFFFFF; }
+        input:checked + .slider:before { transform: translateX(20px); background-color: #000000; }
+
         .result-block { text-align: center; display: none; }
         .result-title { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
         .result-subtitle { color: #aaaaaa; font-size: 0.9em; }
@@ -85,21 +76,36 @@
 </head>
 <body>
 
+    <div class="date-strip" id="date-strip"></div>
+
     <div class="card">
         <div class="header">
             <span>▪️ ТЕКУЩЕЕ ВРЕМЯ</span>
             <span class="clock" id="live-clock">--:--</span>
         </div>
-        <div class="input-group" style="margin-bottom: 0;">
-            <label>🔘 Целевое время (во сколько нужно быть на месте):</label>
-            <input type="time" id="target-time" onchange="calculate()">
+        <div class="input-group">
+            <label>🔘 Целевое время на выбранный день:</label>
+            <input type="time" id="target-time" onchange="hapticInput(); calculate()">
         </div>
     </div>
 
     <div class="card">
-        <div style="font-weight: 600; margin-bottom: 10px;">▪️ СПИСОК ДЕЛ</div>
-        <div class="task-list" id="task-list"></div>
+        <div class="header" style="margin-bottom: 5px;">▪️ СПИСОК ДЕЛ</div>
+        <div class="presets-wrap" id="presets-list"></div>
+        <button class="btn-add" style="background:#222; color:#fff; border:1px solid #444; margin-bottom: 15px; margin-top:5px;" onclick="savePreset()">💾 Сохранить как шаблон</button>
+        
+        <div id="task-list"></div>
         <button class="btn-add" onclick="addTask()">➕ Добавить этап</button>
+    </div>
+
+    <div class="card">
+        <div class="toggle-row">
+            <span style="font-weight:600;">🔔 Уведомления и Спам-мод</span>
+            <label class="switch">
+                <input type="checkbox" id="notif-toggle" checked onchange="hapticInput(); calculate()">
+                <span class="slider"></span>
+            </label>
+        </div>
     </div>
 
     <div class="card result-block" id="result-block">
@@ -111,65 +117,159 @@
         const tg = window.Telegram.WebApp;
         tg.expand(); 
         
+        let activeDate = "";
         let planData = null;
 
-        // Живые часы
+        function hapticInput() { tg.HapticFeedback.impactOccurred('light'); }
+        function hapticError() { tg.HapticFeedback.notificationOccurred('error'); }
+        function hapticSuccess() { tg.HapticFeedback.notificationOccurred('success'); }
+
+        // --- ДАТЫ ---
+        function initDates() {
+            const strip = document.getElementById('date-strip');
+            strip.innerHTML = '';
+            let today = new Date();
+            if (!activeDate) activeDate = today.toISOString().split('T')[0];
+
+            for(let i = 0; i < 7; i++) {
+                let d = new Date();
+                d.setDate(today.getDate() + i);
+                let iso = d.toISOString().split('T')[0];
+                let display = (i===0) ? 'Сегодня' : (i===1) ? 'Завтра' : d.toLocaleDateString('ru-RU', {weekday:'short', day:'numeric'});
+                
+                let btn = document.createElement('div');
+                btn.className = 'date-btn ' + (iso === activeDate ? 'active' : '');
+                btn.innerText = display;
+                btn.onclick = () => {
+                    tg.HapticFeedback.selectionChanged();
+                    activeDate = iso;
+                    initDates();
+                    loadTasks();
+                    calculate();
+                };
+                strip.appendChild(btn);
+            }
+        }
+
+        // --- ЗАДАЧИ ---
+        function getTasksFromDOM() {
+            const rows = document.querySelectorAll('.task-row');
+            let tasks = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.task-name').value.trim();
+                const dur = row.querySelector('.task-dur').value;
+                tasks.push({name, dur});
+            });
+            return tasks;
+        }
+
+        function saveTasksToStorage() {
+            localStorage.setItem('tasks_' + activeDate, JSON.stringify(getTasksFromDOM()));
+        }
+
+        function loadTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = '';
+            let tasks = JSON.parse(localStorage.getItem('tasks_' + activeDate)) || [];
+            if (tasks.length === 0) tasks = [{name: '', dur: ''}];
+            
+            tasks.forEach(t => renderTaskRow(t.name, t.dur));
+        }
+
+        function renderTaskRow(name = '', dur = '') {
+            const container = document.getElementById('task-list');
+            const row = document.createElement('div');
+            row.className = 'task-row';
+            row.innerHTML = `
+                <input type="text" class="task-name" placeholder="Дело (напр. Душ)" value="${name}" oninput="saveTasksToStorage(); calculate()">
+                <input type="number" class="task-dur" placeholder="Мин" min="1" value="${dur}" oninput="saveTasksToStorage(); calculate()">
+                <button class="btn-del" onclick="hapticInput(); this.parentElement.remove(); saveTasksToStorage(); calculate()">✖️</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addTask() {
+            hapticInput();
+            renderTaskRow();
+            saveTasksToStorage();
+        }
+
+        // --- ШАБЛОНЫ ---
+        function renderPresets() {
+            const wrap = document.getElementById('presets-list');
+            wrap.innerHTML = '';
+            let presets = JSON.parse(localStorage.getItem('presets')) || [];
+            presets.forEach((p, idx) => {
+                const chip = document.createElement('div');
+                chip.className = 'preset-chip';
+                chip.innerHTML = `
+                    <span onclick="applyPreset(${idx})">${p.name}</span>
+                    <span class="del-preset" onclick="deletePreset(${idx}, event)">×</span>
+                `;
+                wrap.appendChild(chip);
+            });
+        }
+
+        function savePreset() {
+            let tasks = getTasksFromDOM().filter(t => t.name && t.dur);
+            if (tasks.length === 0) { hapticError(); return tg.showAlert("Сначала добавьте дела с минутами!"); }
+            let name = prompt("Введите название шаблона (например, 'В зал'):");
+            if (!name) return;
+            let presets = JSON.parse(localStorage.getItem('presets')) || [];
+            presets.push({ name: name, tasks: tasks });
+            localStorage.setItem('presets', JSON.stringify(presets));
+            hapticSuccess();
+            renderPresets();
+        }
+
+        function applyPreset(idx) {
+            hapticInput();
+            let presets = JSON.parse(localStorage.getItem('presets')) || [];
+            let tasks = presets[idx].tasks;
+            document.getElementById('task-list').innerHTML = '';
+            tasks.forEach(t => renderTaskRow(t.name, t.dur));
+            saveTasksToStorage();
+            calculate();
+        }
+
+        function deletePreset(idx, e) {
+            e.stopPropagation();
+            hapticInput();
+            let presets = JSON.parse(localStorage.getItem('presets')) || [];
+            presets.splice(idx, 1);
+            localStorage.setItem('presets', JSON.stringify(presets));
+            renderPresets();
+        }
+
+        // --- ЧАСЫ И РАСЧЕТ ---
         function updateClock() {
             const now = new Date();
             const hs = now.getHours().toString().padStart(2, '0');
             const ms = now.getMinutes().toString().padStart(2, '0');
             document.getElementById('live-clock').innerText = `${hs}:${ms}`;
             setTimeout(updateClock, 1000 - now.getMilliseconds());
-            calculate(); // Периодический перерасчет остатка времени
-        }
-        updateClock();
-
-        function addTask() {
-            const container = document.getElementById('task-list');
-            const row = document.createElement('div');
-            row.className = 'task-row';
-            row.innerHTML = `
-                <input type="text" class="task-name" placeholder="Название (напр. Душ)" oninput="calculate()">
-                <input type="number" class="task-dur" placeholder="Мин" min="1" oninput="calculate()">
-                <button class="btn-del" onclick="this.parentElement.remove(); calculate()">✖️</button>
-            `;
-            container.appendChild(row);
+            calculate();
         }
 
-        // Автокалькулятор
         function calculate() {
-            const targetVal = document.getElementById('target-time').value;
-            const rows = document.querySelectorAll('.task-row');
+            const targetTime = document.getElementById('target-time').value;
+            let validTasks = getTasksFromDOM().filter(t => t.name && t.dur);
+            let notifEnabled = document.getElementById('notif-toggle').checked;
             
-            let totalMinutes = 0;
-            let tasks = [];
+            let totalMinutes = validTasks.reduce((sum, t) => sum + parseInt(t.dur), 0);
 
-            rows.forEach(row => {
-                const name = row.querySelector('.task-name').value.trim();
-                const dur = parseInt(row.querySelector('.task-dur').value) || 0;
-                if (name && dur > 0) {
-                    totalMinutes += dur;
-                    tasks.push({name, dur});
-                }
-            });
-
-            if (!targetVal || tasks.length === 0) {
+            if (!targetTime || validTasks.length === 0) {
                 document.getElementById('result-block').style.display = 'none';
                 tg.MainButton.hide();
                 planData = null;
                 return;
             }
 
-            const [h, m] = targetVal.split(':').map(Number);
-            let targetDate = new Date();
+            // Парсим дату и время
+            const [h, m] = targetTime.split(':').map(Number);
+            let targetDate = new Date(`${activeDate}T00:00:00`);
             targetDate.setHours(h, m, 0, 0);
 
-            // Если указанное время уже прошло сегодня, считаем на завтра
-            if (targetDate < new Date()) {
-                targetDate.setDate(targetDate.getDate() + 1);
-            }
-
-            // Рассчитываем время старта
             let startDate = new Date(targetDate.getTime() - totalMinutes * 60000);
             let now = new Date();
             let diffMinutes = Math.floor((startDate - now) / 60000);
@@ -180,27 +280,26 @@
             document.getElementById('out-start').innerText = `${sH}:${sM}`;
             
             const leftEl = document.getElementById('out-left');
-            if (diffMinutes > 0) {
+            if (startDate > now) {
                 leftEl.innerText = `⏳ До начала сборов осталось: ${diffMinutes} мин`;
                 leftEl.style.color = '#aaaaaa';
-                
-                // Настройка MainButton от Telegram
-                tg.MainButton.setText('🔘 СОХРАНИТЬ ПЛАН И ЗАВЕСТИ БУДИЛЬНИК');
+                tg.MainButton.setText('🔘 СОХРАНИТЬ ПЛАН');
                 tg.MainButton.show();
             } else {
                 leftEl.innerText = `✖️ Время старта уже прошло!`;
                 leftEl.style.color = '#ff4444';
-                tg.MainButton.hide(); // Нельзя сохранить просроченный план
+                tg.MainButton.hide();
             }
 
             document.getElementById('result-block').style.display = 'block';
 
-            // Формируем данные для отправки в бот (Unix Time)
             planData = {
+                target_date: activeDate,
                 start_ts: Math.floor(startDate.getTime() / 1000),
                 target_ts: Math.floor(targetDate.getTime() / 1000),
                 total_min: totalMinutes,
-                tasks: tasks
+                tasks: validTasks,
+                notifications_enabled: notifEnabled
             };
         }
 
@@ -211,8 +310,11 @@
             }
         });
 
-        // Добавляем пустую задачу по умолчанию
-        addTask();
+        // Запуск
+        initDates();
+        renderPresets();
+        loadTasks();
+        updateClock();
     </script>
 </body>
 </html>
