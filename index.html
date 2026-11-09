@@ -243,9 +243,10 @@
         }
 
         // --- МАРШРУТЫ И ЯНДЕКС КАРТЫ ---
-        function openMaps(dest) {
+       function openMaps(dest) {
             interact();
-            let url = `https://yandex.by/maps/157/minsk/?rtext=~${encodeURIComponent(dest)}&rtt=mt`;
+            let address = dest.toLowerCase().includes('минск') ? dest : dest + ', Минск';
+            let url = `https://yandex.by/maps/?mode=routes&rtext=~${encodeURIComponent(address)}&rtt=mt`;
             tg.openLink(url);
         }
         function openMapsInput() {
