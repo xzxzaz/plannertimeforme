@@ -3,126 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Тайм-Менеджер</title>
+    <title>Тайм-Менеджер PRO</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { 
-            background-color: #000000; 
-            color: #FFFFFF; 
+            background-color: #000000; color: #FFFFFF; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0; padding: 16px; padding-bottom: 80px; 
+            margin: 0; padding: 16px; padding-bottom: 90px;
+            user-select: none;
         }
         .card { 
-            background-color: #111111; border: 1px solid #333333; 
-            border-radius: 8px; padding: 16px; margin-bottom: 16px; 
+            background-color: #0a0a0a; border: 1px solid #222; 
+            border-radius: 10px; padding: 16px; margin-bottom: 16px; 
         }
         
-        /* Стили календаря */
-        .date-strip {
-            display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px;
-            scrollbar-width: none; /* Firefox */
-        }
+        /* Календарь */
+        .date-strip { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; scrollbar-width: none; }
         .date-strip::-webkit-scrollbar { display: none; }
         .date-btn {
             background: #111; border: 1px solid #333; color: #888;
             padding: 10px 14px; border-radius: 8px; font-weight: 600;
             white-space: nowrap; cursor: pointer; transition: 0.2s;
         }
-        .date-btn.active {
-            background: #FFFFFF; color: #000000; border-color: #FFFFFF;
-        }
+        .date-btn.active { background: #FFFFFF; color: #000000; border-color: #FFFFFF; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 600;}
-        .clock { font-family: monospace; font-size: 1.2em; color: #aaaaaa; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 15px; color: #ddd; }
+        .clock { font-family: monospace; font-size: 1.1em; color: #888; }
         
-        .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaaaaa;}
         input[type="time"], input[type="text"], input[type="number"] { 
             background: #000; color: #FFF; border: 1px solid #333; 
-            padding: 10px; border-radius: 6px; outline: none; font-size: 16px; width: 100%;
+            padding: 12px; border-radius: 8px; outline: none; font-size: 16px; width: 100%;
         }
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-        
-        /* Списки и кнопки */
-        .btn-add { background: #FFFFFF; color: #000000; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .btn-add:active { background: #cccccc; }
+        input:focus { border-color: #666; }
+
+        /* Кнопки и задачи */
+        .btn-main { background: #FFFFFF; color: #000000; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; margin-top: 10px; font-size: 15px;}
+        .btn-main:active { background: #cccccc; }
+        .btn-sec { background: #111; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; width: 100%;}
         
         .task-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
         .task-row input[type="text"] { flex: 1; }
         .task-row input[type="number"] { width: 70px; text-align: center; }
-        .btn-del { background: transparent; border: 1px solid #333; color: #fff; width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; }
+        .btn-del { background: transparent; border: 1px solid #333; color: #fff; width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; display:flex; align-items:center; justify-content:center;}
         
-        /* Шаблоны */
-        .presets-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .preset-chip {
-            background: #222; border: 1px solid #444; border-radius: 6px; 
-            padding: 6px 10px; font-size: 0.85em; display: flex; align-items: center; gap: 6px; cursor: pointer;
-        }
-        .preset-chip .del-preset { color: #ff4444; font-weight: bold; }
+        /* Шаблоны и Транспорт */
+        .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .chip { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; font-size: 0.85em; cursor: pointer; color: #ccc;}
+        .chip.preset { display: flex; align-items: center; gap: 6px; }
+        .chip .del { color: #ff4444; font-weight: bold; padding-left: 4px;}
         
-        /* Тумблер настроек */
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; }
+        /* Тумблер */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: #ddd;}
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .3s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #FFFFFF; }
-        input:checked + .slider:before { transform: translateX(20px); background-color: #000000; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; transition: .3s; border-radius: 24px; border: 1px solid #444;}
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #888; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #FFF; border-color: #FFF;}
+        input:checked + .slider:before { transform: translateX(20px); background-color: #000; }
 
-        .result-block { text-align: center; display: none; }
-        .result-title { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
-        .result-subtitle { color: #aaaaaa; font-size: 0.9em; }
+        .result-block { text-align: center; display: none; padding-top: 10px; }
+        .result-title { font-size: 1.6em; font-weight: 700; margin-bottom: 6px; }
+        .result-subtitle { color: #888; font-size: 0.9em; }
     </style>
 </head>
-<body>
+<body onclick="initAudio()">
 
     <div class="date-strip" id="date-strip"></div>
 
     <div class="card">
         <div class="header">
-            <span>▪️ ТЕКУЩЕЕ ВРЕМЯ</span>
+            <span>ЦЕЛЕВОЕ ВРЕМЯ</span>
             <span class="clock" id="live-clock">--:--</span>
         </div>
-        <div class="input-group">
-            <label>🔘 Целевое время на выбранный день:</label>
-            <input type="time" id="target-time" onchange="hapticInput(); calculate()">
+        <input type="time" id="target-time" onchange="interact(); calculate()">
+    </div>
+
+    <!-- Модуль Яндекс Карт (Минск) -->
+    <div class="card">
+        <div class="header">📍 ДОРОГА (МИНСК)</div>
+        <div class="chips-wrap">
+            <div class="chip" onclick="openMaps('Тренажерный зал')">В зал</div>
+            <div class="chip" onclick="openMaps('Работа')">На смену</div>
+            <div class="chip" onclick="openMaps('Немига')">Немига</div>
+        </div>
+        <input type="text" id="map-address" placeholder="Свой адрес (напр. Зыбицкая 6)" style="margin-bottom: 10px;" onchange="interact()">
+        <button class="btn-sec" style="margin-bottom: 10px;" onclick="openMapsInput()">🗺 Маршрут в Яндекс Картах</button>
+        
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <div class="chip" style="flex:1; text-align:center;" onclick="addTransitTime(15)">+15 м</div>
+            <div class="chip" style="flex:1; text-align:center;" onclick="addTransitTime(25)">+25 м</div>
+            <div class="chip" style="flex:1; text-align:center;" onclick="addTransitTime(35)">+35 м</div>
+            <div class="chip" style="flex:1; text-align:center;" onclick="addTransitTime(45)">+45 м</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <input type="number" id="transit-min" placeholder="Мин" min="1" style="width: 80px;">
+            <button class="btn-main" style="margin-top:0;" onclick="addTransitCustom()">Добавить в план</button>
         </div>
     </div>
 
+    <!-- Список дел -->
     <div class="card">
-        <div class="header" style="margin-bottom: 5px;">▪️ СПИСОК ДЕЛ</div>
-        <div class="presets-wrap" id="presets-list"></div>
-        <button class="btn-add" style="background:#222; color:#fff; border:1px solid #444; margin-bottom: 15px; margin-top:5px;" onclick="savePreset()">💾 Сохранить как шаблон</button>
+        <div class="header">СПИСОК ДЕЛ</div>
+        <div class="chips-wrap" id="presets-list"></div>
+        <button class="btn-sec" style="margin-bottom: 16px;" onclick="savePreset()">💾 Сохранить текущие как шаблон</button>
         
         <div id="task-list"></div>
-        <button class="btn-add" onclick="addTask()">➕ Добавить этап</button>
+        <button class="btn-main" style="background:#222; color:#fff;" onclick="addTask()">➕ Добавить этап</button>
     </div>
 
     <div class="card">
         <div class="toggle-row">
-            <span style="font-weight:600;">🔔 Уведомления и Спам-мод</span>
+            <span>Уведомления и Спам-мод</span>
             <label class="switch">
-                <input type="checkbox" id="notif-toggle" checked onchange="hapticInput(); calculate()">
+                <input type="checkbox" id="notif-toggle" checked onchange="interact(); calculate()">
                 <span class="slider"></span>
             </label>
         </div>
     </div>
 
     <div class="card result-block" id="result-block">
-        <div class="result-title">Время старта: <span id="out-start">--:--</span></div>
+        <div class="result-title" id="out-start">--:--</div>
         <div class="result-subtitle" id="out-left"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand(); 
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
         
         let activeDate = "";
         let planData = null;
 
-        function hapticInput() { tg.HapticFeedback.impactOccurred('light'); }
-        function hapticError() { tg.HapticFeedback.notificationOccurred('error'); }
-        function hapticSuccess() { tg.HapticFeedback.notificationOccurred('success'); }
+        // --- WEB AUDIO API (Звуки без mp3) ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playClick() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+        function playAlert() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(660, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function interact() {
+            initAudio();
+            playClick();
+            tg.HapticFeedback.impactOccurred('light');
+        }
 
         // --- ДАТЫ ---
         function initDates() {
@@ -141,7 +190,7 @@
                 btn.className = 'date-btn ' + (iso === activeDate ? 'active' : '');
                 btn.innerText = display;
                 btn.onclick = () => {
-                    tg.HapticFeedback.selectionChanged();
+                    interact();
                     activeDate = iso;
                     initDates();
                     loadTasks();
@@ -172,7 +221,6 @@
             container.innerHTML = '';
             let tasks = JSON.parse(localStorage.getItem('tasks_' + activeDate)) || [];
             if (tasks.length === 0) tasks = [{name: '', dur: ''}];
-            
             tasks.forEach(t => renderTaskRow(t.name, t.dur));
         }
 
@@ -183,15 +231,42 @@
             row.innerHTML = `
                 <input type="text" class="task-name" placeholder="Дело (напр. Душ)" value="${name}" oninput="saveTasksToStorage(); calculate()">
                 <input type="number" class="task-dur" placeholder="Мин" min="1" value="${dur}" oninput="saveTasksToStorage(); calculate()">
-                <button class="btn-del" onclick="hapticInput(); this.parentElement.remove(); saveTasksToStorage(); calculate()">✖️</button>
+                <button class="btn-del" onclick="interact(); this.parentElement.remove(); saveTasksToStorage(); calculate()">✖️</button>
             `;
             container.appendChild(row);
         }
 
         function addTask() {
-            hapticInput();
+            interact();
             renderTaskRow();
             saveTasksToStorage();
+        }
+
+        // --- МАРШРУТЫ И ЯНДЕКС КАРТЫ ---
+        function openMaps(dest) {
+            interact();
+            let url = `https://yandex.by/maps/157/minsk/?rtext=~${encodeURIComponent(dest)}&rtt=mt`;
+            tg.openLink(url);
+        }
+        function openMapsInput() {
+            let val = document.getElementById('map-address').value.trim();
+            if(!val) return tg.showAlert("Сначала введите адрес!");
+            openMaps(val);
+        }
+        function addTransitTime(mins) {
+            interact();
+            renderTaskRow('🚇 Дорога (Минск)', mins);
+            saveTasksToStorage();
+            calculate();
+        }
+        function addTransitCustom() {
+            interact();
+            let mins = document.getElementById('transit-min').value;
+            if(!mins) return tg.showAlert("Введите минуты!");
+            renderTaskRow('🚇 Дорога (Минск)', mins);
+            document.getElementById('transit-min').value = '';
+            saveTasksToStorage();
+            calculate();
         }
 
         // --- ШАБЛОНЫ ---
@@ -201,29 +276,28 @@
             let presets = JSON.parse(localStorage.getItem('presets')) || [];
             presets.forEach((p, idx) => {
                 const chip = document.createElement('div');
-                chip.className = 'preset-chip';
+                chip.className = 'chip preset';
                 chip.innerHTML = `
                     <span onclick="applyPreset(${idx})">${p.name}</span>
-                    <span class="del-preset" onclick="deletePreset(${idx}, event)">×</span>
+                    <span class="del" onclick="deletePreset(${idx}, event)">×</span>
                 `;
                 wrap.appendChild(chip);
             });
         }
-
         function savePreset() {
+            interact();
             let tasks = getTasksFromDOM().filter(t => t.name && t.dur);
-            if (tasks.length === 0) { hapticError(); return tg.showAlert("Сначала добавьте дела с минутами!"); }
-            let name = prompt("Введите название шаблона (например, 'В зал'):");
+            if (tasks.length === 0) { tg.HapticFeedback.notificationOccurred('error'); return tg.showAlert("Добавьте дела с минутами!"); }
+            let name = prompt("Название шаблона (напр. 'В зал'):");
             if (!name) return;
             let presets = JSON.parse(localStorage.getItem('presets')) || [];
             presets.push({ name: name, tasks: tasks });
             localStorage.setItem('presets', JSON.stringify(presets));
-            hapticSuccess();
+            tg.HapticFeedback.notificationOccurred('success');
             renderPresets();
         }
-
         function applyPreset(idx) {
-            hapticInput();
+            interact();
             let presets = JSON.parse(localStorage.getItem('presets')) || [];
             let tasks = presets[idx].tasks;
             document.getElementById('task-list').innerHTML = '';
@@ -231,17 +305,15 @@
             saveTasksToStorage();
             calculate();
         }
-
         function deletePreset(idx, e) {
-            e.stopPropagation();
-            hapticInput();
+            e.stopPropagation(); interact();
             let presets = JSON.parse(localStorage.getItem('presets')) || [];
             presets.splice(idx, 1);
             localStorage.setItem('presets', JSON.stringify(presets));
             renderPresets();
         }
 
-        // --- ЧАСЫ И РАСЧЕТ ---
+        // --- ЛОГИКА РАСЧЕТА ---
         function updateClock() {
             const now = new Date();
             const hs = now.getHours().toString().padStart(2, '0');
@@ -265,7 +337,6 @@
                 return;
             }
 
-            // Парсим дату и время
             const [h, m] = targetTime.split(':').map(Number);
             let targetDate = new Date(`${activeDate}T00:00:00`);
             targetDate.setHours(h, m, 0, 0);
@@ -277,13 +348,15 @@
             const sH = startDate.getHours().toString().padStart(2, '0');
             const sM = startDate.getMinutes().toString().padStart(2, '0');
             
-            document.getElementById('out-start').innerText = `${sH}:${sM}`;
+            document.getElementById('out-start').innerText = `Старт в ${sH}:${sM}`;
             
             const leftEl = document.getElementById('out-left');
             if (startDate > now) {
-                leftEl.innerText = `⏳ До начала сборов осталось: ${diffMinutes} мин`;
-                leftEl.style.color = '#aaaaaa';
-                tg.MainButton.setText('🔘 СОХРАНИТЬ ПЛАН');
+                leftEl.innerText = `⏳ До старта осталось: ${diffMinutes} мин`;
+                leftEl.style.color = '#888';
+                tg.MainButton.setText('СОХРАНИТЬ ПЛАН');
+                tg.MainButton.color = '#FFFFFF';
+                tg.MainButton.textColor = '#000000';
                 tg.MainButton.show();
             } else {
                 leftEl.innerText = `✖️ Время старта уже прошло!`;
@@ -305,12 +378,15 @@
 
         tg.MainButton.onClick(() => {
             if (planData) {
-                tg.sendData(JSON.stringify(planData));
-                tg.close();
+                initAudio(); playAlert();
+                tg.HapticFeedback.notificationOccurred('success');
+                setTimeout(() => {
+                    tg.sendData(JSON.stringify(planData));
+                    tg.close();
+                }, 300);
             }
         });
 
-        // Запуск
         initDates();
         renderPresets();
         loadTasks();
