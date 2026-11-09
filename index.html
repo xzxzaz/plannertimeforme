@@ -80,7 +80,7 @@
         <input type="time" id="target-time" onchange="interact(); calculate()">
     </div>
 
-    <!-- Модуль Яндекс Карт (Минск) -->
+    <!-- Модуль Яндекс Карт и Google Карт (Минск) -->
     <div class="card">
         <div class="header">📍 ДОРОГА (МИНСК)</div>
         <div class="chips-wrap">
@@ -89,7 +89,11 @@
             <div class="chip" onclick="openMaps('Немига')">Немига</div>
         </div>
         <input type="text" id="map-address" placeholder="Свой адрес (напр. Зыбицкая 6)" style="margin-bottom: 10px;" onchange="interact()">
-        <button class="btn-sec" style="margin-bottom: 10px;" onclick="openMapsInput()">🗺 Маршрут в Яндекс Картах</button>
+        
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button class="btn-sec" style="flex:1;" onclick="openMapsInput()">🗺 Яндекс</button>
+            <button class="btn-sec" style="flex:1;" onclick="openGoogleMaps()">🗺 Google</button>
+        </div>
         
         <div style="display:flex; gap:8px; margin-bottom:10px;">
             <div class="chip" style="flex:1; text-align:center;" onclick="addTransitTime(15)">+15 м</div>
@@ -242,24 +246,39 @@
             saveTasksToStorage();
         }
 
-        // --- МАРШРУТЫ И ЯНДЕКС КАРТЫ ---
-       function openMaps(dest) {
+        // --- МАРШРУТЫ И КАРТЫ ---
+        function openMaps(dest) {
             interact();
             let address = dest.toLowerCase().includes('минск') ? dest : dest + ', Минск';
-            let url = `https://yandex.by/maps/?mode=routes&rtext=~${encodeURIComponent(address)}&rtt=mt`;
-            tg.openLink(url);
+            // Используем yandex.ru (лучше перехватывается мобильным приложением)
+            let url = `https://yandex.ru/maps/?mode=routes&rtext=~${encodeURIComponent(address)}&rtt=mt`;
+            // Флаг { try_instant_view: false } выкидывает ссылку из Telegram во внешнее приложение
+            tg.openLink(url, { try_instant_view: false });
         }
+        
+        function openGoogleMaps() {
+            interact();
+            let dest = document.getElementById('map-address').value.trim();
+            if(!dest) return tg.showAlert("Сначала введите адрес!");
+            let address = dest.toLowerCase().includes('минск') ? dest : dest + ', Минск';
+            // Бронебойная ссылка Google Карт для общественного транспорта
+            let url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=transit`;
+            tg.openLink(url, { try_instant_view: false });
+        }
+
         function openMapsInput() {
             let val = document.getElementById('map-address').value.trim();
             if(!val) return tg.showAlert("Сначала введите адрес!");
             openMaps(val);
         }
+        
         function addTransitTime(mins) {
             interact();
             renderTaskRow('🚇 Дорога (Минск)', mins);
             saveTasksToStorage();
             calculate();
         }
+        
         function addTransitCustom() {
             interact();
             let mins = document.getElementById('transit-min').value;
